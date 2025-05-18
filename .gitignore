@@ -1,0 +1,39 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Django stuff
+*.sqlite3
+*.log
+*.pot
+*.pyc
+*.db
+*.json
+
+# Django secret/config files
+*.env
+secrets.json
+
+# Virtual environments
+venv/
+env/
+.sp_env/
+
+# Static and media files
+staticfiles/
+media/
+*.png
+*.jpg
+*.zip
+*.nii.gz
+*.vti
+*.npy
+*.pth
+
+# Migrations
+**/migrations/
+
+# VSCode and other IDEs
+.vscode/
+.idea/
