@@ -121,12 +121,23 @@ class ImageUploadView(APIView):
                 axes[idx, 2].set_title(f"Prediction Slice {i}")
 
             plt.tight_layout()
-            img_buf = BytesIO()
-            plt.savefig(img_buf, format='png', bbox_inches='tight')
-            img_buf.seek(0)
+            # Save preview to media folder
+            preview_path = os.path.join(glance_dir, "preview.png")
+            plt.savefig(preview_path, format='png', bbox_inches='tight')
             plt.close()
 
-            return HttpResponse(img_buf, content_type='image/png')
+            # Build URLs
+            base_url = request.build_absolute_uri("/media/glance_data/")
+            volume_url = base_url + "volume.nii.gz"
+            mask_url = base_url + "mask.nii.gz"
+            preview_url = base_url + "preview.png"
+
+            return Response({
+                "volume_url": volume_url,
+                "mask_url": mask_url,
+                "preview_url": preview_url
+            })
+
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
