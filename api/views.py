@@ -6,13 +6,13 @@ import nibabel as nib
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from io import BytesIO
 
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from django.http import HttpResponse
+from django.conf import settings
 
 import torch
 from monai.networks.nets import SegResNet
@@ -85,32 +85,47 @@ class ImageUploadView(APIView):
                 output = sliding_window_inference(image_tensor, roi_size=spatial_size, sw_batch_size=1, predictor=model)
                 prediction = torch.argmax(output, dim=1).cpu().numpy()[0]  # shape: (128, 128, 64)
 
-            # Plot slices from 9 onward
-            fig, axes = plt.subplots(64 - 9, 3, figsize=(15, (64 - 9) * 3))  # Wider and taller
+            # Save to media/glance_data
+            glance_dir = os.path.join(settings.MEDIA_ROOT, "glance_data")
+            os.makedirs(glance_dir, exist_ok=True)
 
+            affine = nib.load(tmp_path).affine
 
-            for idx, i in enumerate(range(9, 64)):
-                # Image
+            volume_path = os.path.join(glance_dir, "volume.nii.gz")
+            mask_path = os.path.join(glance_dir, "mask.nii.gz")
+
+            nib.save(nib.Nifti1Image(volume.astype(np.float32), affine), volume_path)
+            nib.save(nib.Nifti1Image(prediction.astype(np.uint8), affine), mask_path)
+
+            # Generate full public URLs
+            base_url = request.build_absolute_uri("/media/glance_data/")
+            volume_url = base_url + "volume.nii.gz"
+            mask_url = base_url + "mask.nii.gz"
+
+            # Plot fewer middle slices to avoid crowding
+            start, end = 22, 42
+            fig, axes = plt.subplots(end - start, 3, figsize=(12, (end - start) * 2.5))
+
+            for idx, i in enumerate(range(start, end)):
                 axes[idx, 0].imshow(volume[:, :, i], cmap='gray')
-                axes[idx, 0].set_title(f"Image Slice {i}")
                 axes[idx, 0].axis('off')
+                axes[idx, 0].set_title(f"Image Slice {i}")
 
-                # Overlay
                 axes[idx, 1].imshow(volume[:, :, i], cmap='gray')
                 axes[idx, 1].imshow(prediction[:, :, i], cmap='hot', alpha=0.5)
-                axes[idx, 1].set_title(f"Overlay Slice {i}")
                 axes[idx, 1].axis('off')
+                axes[idx, 1].set_title(f"Overlay Slice {i}")
 
-                # Prediction
                 axes[idx, 2].imshow(prediction[:, :, i], cmap='hot')
-                axes[idx, 2].set_title(f"Prediction Slice {i}")
                 axes[idx, 2].axis('off')
+                axes[idx, 2].set_title(f"Prediction Slice {i}")
 
             plt.tight_layout()
             img_buf = BytesIO()
             plt.savefig(img_buf, format='png', bbox_inches='tight')
             img_buf.seek(0)
             plt.close()
+
             return HttpResponse(img_buf, content_type='image/png')
 
         except Exception as e:
