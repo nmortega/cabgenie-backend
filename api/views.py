@@ -80,74 +80,74 @@ class ImageUploadView(APIView):
     parser_classes = [MultiPartParser]
 
     def post(self, request, *args, **kwargs):
-    uploaded_file = request.FILES.get('image')
-    if not uploaded_file:
-        return Response({"error": "No file uploaded."}, status=400)
+        uploaded_file = request.FILES.get('image')
+        if not uploaded_file:
+            return Response({"error": "No file uploaded."}, status=400)
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz", dir="/tmp") as tmp:
-        for chunk in uploaded_file.chunks():
-            tmp.write(chunk)
-        tmp_path = tmp.name
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz", dir="/tmp") as tmp:
+            for chunk in uploaded_file.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
 
-    try:
-        # Preprocess
-        data = test_transforms({"vol": tmp_path})
-        image_tensor = data["vol"].unsqueeze(0).to(device)
-        volume = data["vol"].cpu().numpy()[0]
+        try:
+            # Preprocess
+            data = test_transforms({"vol": tmp_path})
+            image_tensor = data["vol"].unsqueeze(0).to(device)
+            volume = data["vol"].cpu().numpy()[0]
 
-        # Predict
-        with torch.no_grad():
-            output = sliding_window_inference(image_tensor, roi_size=spatial_size, sw_batch_size=1, predictor=model)
-            prediction = torch.argmax(output, dim=1).cpu().numpy()[0]
+            # Predict
+            with torch.no_grad():
+                output = sliding_window_inference(image_tensor, roi_size=spatial_size, sw_batch_size=1, predictor=model)
+                prediction = torch.argmax(output, dim=1).cpu().numpy()[0]
 
-        # Save to media/glance_data
-        glance_dir = os.path.join(settings.MEDIA_ROOT, "glance_data")
-        os.makedirs(glance_dir, exist_ok=True)
+            # Save to media/glance_data
+            glance_dir = os.path.join(settings.MEDIA_ROOT, "glance_data")
+            os.makedirs(glance_dir, exist_ok=True)
 
-        affine = nib.load(tmp_path).affine
-        volume_path = os.path.join(glance_dir, "volume.nii.gz")
-        mask_path = os.path.join(glance_dir, "mask.nii.gz")
+            affine = nib.load(tmp_path).affine
+            volume_path = os.path.join(glance_dir, "volume.nii.gz")
+            mask_path = os.path.join(glance_dir, "mask.nii.gz")
 
-        nib.save(nib.Nifti1Image(volume.astype(np.float32), affine), volume_path)
-        nib.save(nib.Nifti1Image(prediction.astype(np.uint8), affine), mask_path)
+            nib.save(nib.Nifti1Image(volume.astype(np.float32), affine), volume_path)
+            nib.save(nib.Nifti1Image(prediction.astype(np.uint8), affine), mask_path)
 
-        # Generate preview image
-        start, end = 22, 42
-        fig, axes = plt.subplots(end - start, 3, figsize=(12, (end - start) * 2.5))
+            # Generate preview image
+            start, end = 22, 42
+            fig, axes = plt.subplots(end - start, 3, figsize=(12, (end - start) * 2.5))
 
-        for idx, i in enumerate(range(start, end)):
-            axes[idx, 0].imshow(volume[:, :, i], cmap='gray')
-            axes[idx, 0].axis('off')
-            axes[idx, 0].set_title(f"Image Slice {i}")
+            for idx, i in enumerate(range(start, end)):
+                axes[idx, 0].imshow(volume[:, :, i], cmap='gray')
+                axes[idx, 0].axis('off')
+                axes[idx, 0].set_title(f"Image Slice {i}")
 
-            axes[idx, 1].imshow(volume[:, :, i], cmap='gray')
-            axes[idx, 1].imshow(prediction[:, :, i], cmap='hot', alpha=0.5)
-            axes[idx, 1].axis('off')
-            axes[idx, 1].set_title(f"Overlay Slice {i}")
+                axes[idx, 1].imshow(volume[:, :, i], cmap='gray')
+                axes[idx, 1].imshow(prediction[:, :, i], cmap='hot', alpha=0.5)
+                axes[idx, 1].axis('off')
+                axes[idx, 1].set_title(f"Overlay Slice {i}")
 
-            axes[idx, 2].imshow(prediction[:, :, i], cmap='hot')
-            axes[idx, 2].axis('off')
-            axes[idx, 2].set_title(f"Prediction Slice {i}")
+                axes[idx, 2].imshow(prediction[:, :, i], cmap='hot')
+                axes[idx, 2].axis('off')
+                axes[idx, 2].set_title(f"Prediction Slice {i}")
 
-        plt.tight_layout()
-        preview_path = os.path.join(glance_dir, "preview.png")
-        plt.savefig(preview_path, format='png', bbox_inches='tight')
-        plt.close()
+            plt.tight_layout()
+            preview_path = os.path.join(glance_dir, "preview.png")
+            plt.savefig(preview_path, format='png', bbox_inches='tight')
+            plt.close()
 
-        base_url = request.build_absolute_uri("/media/glance_data/")
-        volume_url = base_url + "volume.nii.gz"
-        mask_url = base_url + "mask.nii.gz"
-        preview_url = base_url + "preview.png"
+            base_url = request.build_absolute_uri("/media/glance_data/")
+            volume_url = base_url + "volume.nii.gz"
+            mask_url = base_url + "mask.nii.gz"
+            preview_url = base_url + "preview.png"
 
-        return Response({
-            "volume_url": volume_url,
-            "mask_url": mask_url,
-            "preview_url": preview_url
-        }, content_type="application/json")
+            return Response({
+                "volume_url": volume_url,
+                "mask_url": mask_url,
+                "preview_url": preview_url
+            }, content_type="application/json")
 
-    except Exception as e:
-        traceback.print_exc()  # ✅ Log full traceback to console for Railway
-        return Response({"error": str(e)}, status=500)
+        except Exception as e:
+            traceback.print_exc()  # ✅ Log full traceback to console
+            return Response({"error": str(e)}, status=500)
 
-    finally:
-        os.remove(tmp_path)
+        finally:
+            os.remove(tmp_path)
