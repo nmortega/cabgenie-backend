@@ -27,7 +27,11 @@ SECRET_KEY = 'django-insecure-fa#+5ot*5tr5u=cwv@05d^tu7&m9-#s6)k7&$*&1-7(gr7qf6k
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS= ["*"]
+CSRF_TRUSTED_ORIGINS = [
+    'https://cabgenie-backend.up.railway.app',
+    'http://localhost:3000',
+]
+
 
 
 # Application definition
