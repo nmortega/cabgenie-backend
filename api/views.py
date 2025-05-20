@@ -23,6 +23,8 @@ from monai.transforms import (
 )
 from monai.networks.layers import Norm
 import urllib.request
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 # Path where you want to store the downloaded model
 MODEL_LOCAL_PATH = os.path.join("models", "best_metric_model.pth")
@@ -72,6 +74,7 @@ test_transforms = Compose([
     ToTensord(keys=["vol"]),
 ])
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ImageUploadView(APIView):
     parser_classes = [MultiPartParser]
 

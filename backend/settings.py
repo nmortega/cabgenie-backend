@@ -32,6 +32,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://cabgenie-backend.up.railway.app',
     'http://localhost:5173',
     'https://kitware.github.io', 
+    'http://localhost:9999',
 ]
 
 
