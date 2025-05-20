@@ -83,7 +83,7 @@ class ImageUploadView(APIView):
         if not uploaded_file:
             return Response({"error": "No file uploaded."}, status=400)
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz") as tmp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".nii.gz", dir="/tmp") as tmp:
             for chunk in uploaded_file.chunks():
                 tmp.write(chunk)
             tmp_path = tmp.name
