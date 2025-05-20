@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-fa#+5ot*5tr5u=cwv@05d^tu7&m9-#s6)k7&$*&1-7(gr7qf6k
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True
 ALLOWED_HOSTS = ["*"]
 CSRF_TRUSTED_ORIGINS = [
     'https://cabgenie-backend.up.railway.app',
@@ -36,14 +36,6 @@ CSRF_TRUSTED_ORIGINS = [
     'https://cabgenie-frontend.up.railway.app/',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    'https://cabgenie-backend.up.railway.app',
-    'http://localhost:5173',
-    'https://kitware.github.io', 
-    'http://localhost:9999',
-    'https://github.com',
-    'https://cabgenie-frontend.up.railway.app/',
-]
 
 
 
