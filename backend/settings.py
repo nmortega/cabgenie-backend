@@ -29,7 +29,7 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 CSRF_TRUSTED_ORIGINS = [
     'https://cabgenie-backend.up.railway.app',
-    'http://localhost:3000',
+    'http://localhost:5173/',
 ]
 
 
