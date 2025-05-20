@@ -60,7 +60,6 @@ cleaned_state_dict = {k.replace("_orig_mod.", ""): v for k, v in checkpoint.item
 model.load_state_dict(cleaned_state_dict)
 model.eval()
 
-
 # Preprocessing
 test_transforms = Compose([
     LoadImaged(keys=["vol"]),
@@ -109,12 +108,7 @@ class ImageUploadView(APIView):
             nib.save(nib.Nifti1Image(volume.astype(np.float32), affine), volume_path)
             nib.save(nib.Nifti1Image(prediction.astype(np.uint8), affine), mask_path)
 
-            # Generate full public URLs
-            base_url = request.build_absolute_uri("/media/glance_data/")
-            volume_url = base_url + "volume.nii.gz"
-            mask_url = base_url + "mask.nii.gz"
-
-            # Plot fewer middle slices to avoid crowding
+            # Generate preview image
             start, end = 22, 42
             fig, axes = plt.subplots(end - start, 3, figsize=(12, (end - start) * 2.5))
 
@@ -133,7 +127,6 @@ class ImageUploadView(APIView):
                 axes[idx, 2].set_title(f"Prediction Slice {i}")
 
             plt.tight_layout()
-            # Save preview to media folder
             preview_path = os.path.join(glance_dir, "preview.png")
             plt.savefig(preview_path, format='png', bbox_inches='tight')
             plt.close()
@@ -148,8 +141,7 @@ class ImageUploadView(APIView):
                 "volume_url": volume_url,
                 "mask_url": mask_url,
                 "preview_url": preview_url
-            })
-
+            }, content_type="application/json")
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
