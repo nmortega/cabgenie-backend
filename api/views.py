@@ -26,6 +26,8 @@ import urllib.request
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import traceback
+from monai.transforms import Orientation
+
 
 # Path where you want to store the downloaded model
 MODEL_LOCAL_PATH = os.path.join("models", "best_metric_model.pth")
@@ -99,6 +101,20 @@ class ImageUploadView(APIView):
             with torch.no_grad():
                 output = sliding_window_inference(image_tensor, roi_size=spatial_size, sw_batch_size=1, predictor=model)
                 prediction = torch.argmax(output, dim=1).cpu().numpy()[0]
+                # Get prediction tensor
+                prediction_tensor = torch.argmax(output, dim=1)  # (1, H, W, D)
+
+                # Reorient both volume and prediction back to LAS
+                reverse_orient = Orientation(axcodes="LAS")
+
+                # Re-wrap volume and prediction with channel dim for orientation transform
+                vol_tensor = torch.from_numpy(volume).unsqueeze(0)  # (1, H, W, D)
+                pred_tensor = prediction_tensor  # already (1, H, W, D)
+
+                # Apply reverse orientation
+                vol_las = reverse_orient(vol_tensor)[0].numpy()  # remove channel
+                pred_las = reverse_orient(pred_tensor)[0].numpy()
+
 
             # Save to media/glance_data
             glance_dir = os.path.join(settings.MEDIA_ROOT, "glance_data")
@@ -108,11 +124,12 @@ class ImageUploadView(APIView):
             volume_path = os.path.join(glance_dir, "volume.nii.gz")
             mask_path = os.path.join(glance_dir, "mask.nii.gz")
 
-            nib.save(nib.Nifti1Image(volume.astype(np.float32), affine), volume_path)
-            nib.save(nib.Nifti1Image(prediction.astype(np.uint8), affine), mask_path)
+            nib.save(nib.Nifti1Image(vol_las.astype(np.float32), affine), volume_path)
+            nib.save(nib.Nifti1Image(pred_las.astype(np.uint8), affine), mask_path)
+
 
             # Generate preview image
-            start, end = 22, 42
+            start, end = 16, 48
             fig, axes = plt.subplots(end - start, 3, figsize=(12, (end - start) * 2.5))
 
             for idx, i in enumerate(range(start, end)):
