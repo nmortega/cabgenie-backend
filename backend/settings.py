@@ -32,13 +32,15 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',
     'https://kitware.github.io', 
     'http://localhost:9999',
+    'https://github.com',
 ]
 
 CORS_ALLOWED_ORIGINS = [
     'https://cabgenie-backend.up.railway.app',
     'http://localhost:5173',
     'https://kitware.github.io', 
-    'http://localhost:9999',  # if you deploy frontend later
+    'http://localhost:9999',
+    'https://github.com',
 ]
 
 
