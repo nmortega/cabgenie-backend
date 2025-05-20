@@ -27,10 +27,13 @@ SECRET_KEY = 'django-insecure-fa#+5ot*5tr5u=cwv@05d^tu7&m9-#s6)k7&$*&1-7(gr7qf6k
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
+CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = [
     'https://cabgenie-backend.up.railway.app',
-    'http://localhost:5173/',
+    'http://localhost:5173',
+    'https://kitware.github.io', 
 ]
+
 
 
 
@@ -125,7 +128,7 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True
+
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
