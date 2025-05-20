@@ -22,6 +22,20 @@ from monai.transforms import (
     ScaleIntensityRanged, CropForegroundd, Resized, ToTensord
 )
 from monai.networks.layers import Norm
+import urllib.request
+
+# Path where you want to store the downloaded model
+MODEL_LOCAL_PATH = os.path.join("models", "best_metric_model.pth")
+MODEL_REMOTE_URL = "https://github.com/nmortega/cabgenie-segresnet-best-weight/raw/refs/heads/main/best_metric_model.pth"
+
+# Create model directory if it doesn't exist
+os.makedirs("models", exist_ok=True)
+
+# Download only if file doesn't exist
+if not os.path.exists(MODEL_LOCAL_PATH):
+    print("🔽 Downloading model checkpoint...")
+    urllib.request.urlretrieve(MODEL_REMOTE_URL, MODEL_LOCAL_PATH)
+    print("✅ Downloaded checkpoint to:", MODEL_LOCAL_PATH)
 
 # Constants
 pixdim = (1.5, 1.5, 1.0)
@@ -41,13 +55,11 @@ model = SegResNet(
     norm=Norm.BATCH,
 ).to(device)
 
-checkpoint = torch.load(
-    "/Users/nothanilo/Desktop/Vast.ai Training Weights/SegResNet Epochs 200 Dropout 0.2/best_metric_model.pth",
-    map_location=device
-)
+checkpoint = torch.load(MODEL_LOCAL_PATH, map_location=device)
 cleaned_state_dict = {k.replace("_orig_mod.", ""): v for k, v in checkpoint.items()}
 model.load_state_dict(cleaned_state_dict)
 model.eval()
+
 
 # Preprocessing
 test_transforms = Compose([
